@@ -9,13 +9,6 @@ type GoodsController struct {
 }
 
 func (this *GoodsController) ShowIndex() {
-	userName := this.GetSession("userName")
-	if userName == nil {
-		//未登录
-		this.Data["userName"] = ""
-	} else {
-		//已登录
-		this.Data["userName"] = userName.(string)
-	}
+	GetUser(&this.Controller)
 	this.TplName = "index.html"
 }

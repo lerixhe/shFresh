@@ -54,7 +54,7 @@ func (this *UserController) HandleReg() {
 	expr := "^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$"
 	reg, err := regexp.Compile(expr)
 	if err != nil {
-		log.Println("regexpstring err", err)
+		log.Println("正则解析错误：", err)
 		return
 	}
 	if reg.FindString(email) == "" {
@@ -88,7 +88,7 @@ func (this *UserController) HandleReg() {
 	emailConn.Text = "http://127.0.0.1:8080/active?id=" + strconv.Itoa(user.Id)
 	err = emailConn.Send()
 	if err != nil {
-		log.Println("email err:", err, emailConn.From, emailConn.To)
+		log.Println("邮箱服务出错，发件人与收件人信息如下:", err, emailConn.From, emailConn.To)
 		this.TplName = "register.html"
 		this.Data["errmsg"] = "系统错误,请稍后重试"
 		return
@@ -144,24 +144,24 @@ func (this *UserController) HandleLogin() {
 	//获得登录数据
 	userName := this.GetString("username")
 	pwd := this.GetString("pwd")
-	log.Println("username:", userName, "pwd:", pwd)
+	log.Println("用户提交用户名：", userName, "密码：:", pwd)
 	//校验数据
 	if userName == "" || pwd == "" {
 		this.Data["errmsg"] = "登录信息不完整！"
 		this.TplName = "login.html"
 		return
 	}
-	//写入数据库
+	//读取数据库并核对
 	o := orm.NewOrm()
 	user := models.User{Name: userName}
 	err := o.Read(&user, "Name") //非主键字段需要特别指明
-	log.Println(user)
+	log.Println("从数据库中取得用户信息：", user)
 	if err != nil || user.PassWord != pwd {
 		this.Data["errmsg"] = "用户名或密码错误，请重试"
 		this.TplName = "login.html"
 		return
 	}
-	log.Println(user.Active)
+	log.Println("用户激活状态", user.Active)
 	if user.Active == false {
 		this.Data["errmsg"] = "用户未激活，请前往邮箱激活！"
 		this.TplName = "login.html"
@@ -175,7 +175,7 @@ func (this *UserController) HandleLogin() {
 	} else {
 		this.Ctx.SetCookie("userName", temp, -1)
 	}
-	log.Println("cookies:", this.Ctx.GetCookie("userName"))
+	log.Println("cookies保存成功：", this.Ctx.GetCookie("userName"))
 	//登录成功设置session
 	this.SetSession("userName", userName)
 	//返回视图
@@ -200,24 +200,112 @@ func (this *UserController) HandleLogout() {
 
 //显示用户中心：用户信息
 func (this *UserController) ShowUserInfo() {
-	userName := this.GetSession("userName")
-	this.Data["userName"] = userName.(string)
+	userName := GetUser(&this.Controller)
 	this.Data["infoActive"] = "active"
 	this.TplName = "user_center_info.html"
+	//查询用户的地址信息
+	o := orm.NewOrm()
+	var addr models.Address
+	o.QueryTable("Address").RelatedSel("User").Filter("User__Name", userName).Filter("Isdefault", true).One(&addr)
+	log.Println("查询到用户地址：", addr)
+	//信息写入视图
+	this.Data["phoneNum"] = addr.Phone
+	this.Data["address"] = addr.Addr
+
 }
 
 //显示用户中心：用户订单
 func (this *UserController) ShowUserOrder() {
-	userName := this.GetSession("userName")
-	this.Data["userName"] = userName.(string)
+	GetUser(&this.Controller)
 	this.Data["orderActive"] = "active"
 	this.TplName = "user_center_order.html"
 }
 
-//显示用户中心：用户订单
+//显示用户中心：用户地址
 func (this *UserController) ShowUserSite() {
-	userName := this.GetSession("userName")
-	this.Data["userName"] = userName.(string)
+	GetUser(&this.Controller)
 	this.Data["siteActive"] = "active"
 	this.TplName = "user_center_site.html"
+}
+
+//处理用户提交的地址信息
+func (this *UserController) HandleUserSite() {
+	this.TplName = "user_center_site.html"
+	receiver := this.GetString("receiver")
+	zipCode := this.GetString("zipCode")
+	addr := this.GetString("addr")
+	phone := this.GetString("phone")
+	log.Println("用户提交如下信息：", receiver, zipCode, addr, phone)
+	//校验数据
+	//数据完整性校验
+	if receiver == "" || addr == "" || zipCode == "" || phone == "" {
+		log.Println("用户提交的数据不完整！")
+		this.Data["errmsg"] = "信息填写不完整！"
+		return
+	}
+	//手机号格式校验
+	expr := "^1([38][0-9]|14[57]|5[^4])\\d{8}$"
+	reg, err := regexp.Compile(expr)
+	if err != nil {
+		log.Println("正则解析错误：", err)
+		return
+	}
+	if reg.FindString(phone) == "" {
+		this.Data["errmsg"] = "手机号格式不正确，请重新输入"
+		return
+	}
+	o := orm.NewOrm()
+	var address models.Address
+	address.Isdefault = true
+	//先查询该用户的默认地址，没有默认地址[直接插入并设为默认]，有默认地址则先取消默认[再插入并设为默认]
+	err = o.Read(&address, "Isdefault")
+	if err != nil {
+		log.Println("数据库未读取到默认地址：", err)
+	} else {
+		log.Println("数据库读取到默认地址：", address)
+		address.Isdefault = false
+		o.Update(&address)
+	}
+	//写入数据库,存在外键，一定要初始化外键值，否则插入不成功
+	//再次读数据库，取得完整user作为外键
+	userName := this.GetSession("userName").(string)
+	user := models.User{Name: userName}
+	o.Read(&user, "Name")
+	//创建新地址
+	address = models.Address{
+		Receiver:  receiver,
+		Addr:      addr,
+		Zipcode:   zipCode,
+		Phone:     phone,
+		Isdefault: true,
+		User:      &user,
+	}
+	//写入数据库
+	_, err = o.Insert(&address)
+	if err != nil {
+		log.Println("写入数据库失败！", address)
+		return
+	}
+	//提交成功后需要刷新很多信息，故直接重定向
+	this.Redirect("/user/userCenterSite", 302)
+}
+
+// //封装一个函数，自动保存草稿,目前想到使用全局变量实现，但不够优雅，暂时放过
+// func SaveInfo(this *beego.Controller, receiver, zipCode, addr, phone string) {
+// 	this.Data["receiver"] = receiver
+// 	this.Data["zipCode"] = zipCode
+// 	this.Data["addr"] = addr
+// 	this.Data["phone"] = phone
+// 	log.Println("草稿箱：", receiver, zipCode, addr, phone)
+// }
+
+//封装函数：从session中获取用户名写入模板
+//为了让函数通用性更强，直接传父类对象
+func GetUser(this *beego.Controller) (uname string) {
+	userName := this.GetSession("userName")
+	if userName != nil {
+		uname = userName.(string)
+	}
+	this.Data["userName"] = uname
+	return
 }

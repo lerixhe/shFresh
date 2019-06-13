@@ -26,13 +26,13 @@ func init() {
 	//显示用户中心：用户订单
 	beego.Router("/user/userCenterOrder", &controllers.UserController{}, "get:ShowUserOrder")
 	//显示用户中心：用户地址
-	beego.Router("/user/userCenterSite", &controllers.UserController{}, "get:ShowUserSite")
+	beego.Router("/user/userCenterSite", &controllers.UserController{}, "get:ShowUserSite;post:HandleUserSite")
 }
 
 //全局变量
 var filterFunc = func(ctx *context.Context) {
 	userName := ctx.Input.Session("userName")
-	log.Println("session:", userName)
+	log.Println("当前用户session信息:", userName)
 	if userName == nil {
 		ctx.Redirect(302, "/login")
 		return
