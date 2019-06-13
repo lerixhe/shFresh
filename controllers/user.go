@@ -223,8 +223,18 @@ func (this *UserController) ShowUserOrder() {
 
 //显示用户中心：用户地址
 func (this *UserController) ShowUserSite() {
-	GetUser(&this.Controller)
+	userName := GetUser(&this.Controller)
 	this.Data["siteActive"] = "active"
+	//使用用户名查询收件地址
+	o := orm.NewOrm()
+	addr := models.Address{}
+	err := o.QueryTable("Address").RelatedSel("User").Filter("User__Name", userName).Filter("Isdefault", true).One(&addr)
+	if err != nil {
+		log.Println("查询地址错误！", err)
+		return
+	}
+	log.Println("查询到以下地址：", addr)
+	this.Data["addr"] = addr
 	this.TplName = "user_center_site.html"
 }
 
