@@ -14,6 +14,15 @@ import (
 	"github.com/astaxie/beego"
 )
 
+/*
+   控制器四部曲：
+   1.获取数据
+   2.校验数据
+   3.处理数据
+   4.返回视图
+   路由四部曲：
+   1.
+*/
 // 用户模块控制器
 type UserController struct {
 	beego.Controller
@@ -68,10 +77,10 @@ func (this *UserController) HandleReg() {
 	}
 	//发送邮件
 	emailConfig := `{
-		"username":"185734549@qq.com",
-		"password":"jkapqqylhhizbidf",
-		"host":"smtp.qq.com",
-		"port":587}`
+        "username":"185734549@qq.com",
+        "password":"jkapqqylhhizbidf",
+        "host":"smtp.qq.com",
+        "port":587}`
 	emailConn := utils.NewEMail(emailConfig)
 	emailConn.From = "185734549@qq.com"
 	emailConn.To = []string{email}
@@ -167,7 +176,48 @@ func (this *UserController) HandleLogin() {
 		this.Ctx.SetCookie("userName", temp, -1)
 	}
 	log.Println("cookies:", this.Ctx.GetCookie("userName"))
+	//登录成功设置session
+	this.SetSession("userName", userName)
 	//返回视图
-	this.Ctx.WriteString("登录成功！")
+	//this.Ctx.WriteString("登录成功！")
+	this.Ctx.Redirect(302, "/")
 
+}
+
+//显示首页
+func (this *UserController) ShowIndex() {
+	//登录判断
+	//思路：开启session存储登录信息，使用路由过滤器控制访问权限
+
+	this.TplName = "index.html"
+}
+
+//退出登录
+func (this *UserController) HandleLogout() {
+	this.DelSession("userName")
+	this.Redirect("/login", 302)
+}
+
+//显示用户中心：用户信息
+func (this *UserController) ShowUserInfo() {
+	userName := this.GetSession("userName")
+	this.Data["userName"] = userName.(string)
+	this.Data["infoActive"] = "active"
+	this.TplName = "user_center_info.html"
+}
+
+//显示用户中心：用户订单
+func (this *UserController) ShowUserOrder() {
+	userName := this.GetSession("userName")
+	this.Data["userName"] = userName.(string)
+	this.Data["orderActive"] = "active"
+	this.TplName = "user_center_order.html"
+}
+
+//显示用户中心：用户订单
+func (this *UserController) ShowUserSite() {
+	userName := this.GetSession("userName")
+	this.Data["userName"] = userName.(string)
+	this.Data["siteActive"] = "active"
+	this.TplName = "user_center_site.html"
 }
