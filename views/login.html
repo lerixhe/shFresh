@@ -8,7 +8,7 @@
 </head>
 <body>
 	<div class="login_top clearfix">
-		<a href="index.html" class="login_logo"><img src="/static/images/logo02.png"></a>	
+		<a href="/" class="login_logo"><img src="/static/images/logo02.png"></a>	
 	</div>
 
 	<div class="login_form_bg">
@@ -18,7 +18,7 @@
 			<div class="login_form fr">
 				<div class="login_title clearfix">
 					<h1>用户登录</h1>
-					<a href="#">立即注册</a>
+					<a href="/register">立即注册</a>
 				</div>
 				<div class="form_input">
 					<form method="POST" action="/login">
@@ -27,10 +27,10 @@
 						<input type="password" name="pwd" class="pass_input" placeholder="请输入密码">
 						<div class="pwd_error">输入错误</div>
 						<div class="more_input clearfix">
-							<!-- 只要有checke属性就生效，不管其值是什么 -->
+							<!-- 只要有checked属性就生效，不管其值是什么 -->
 							<input type="checkbox" name="remember" {{.checked}}>
 							<label>记住用户名</label>
-							<a href="#">忘记密码</a>
+							<a href="/forgot">忘记密码</a>
 						</div>
 						<input type="submit" name="" value="登录" class="input_submit">
 					</form>

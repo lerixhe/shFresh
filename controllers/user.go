@@ -116,7 +116,8 @@ func (this *UserController) ActiveUser() {
 	user.Active = true
 	o.Update(&user)
 	//返回视图
-	this.Redirect("/login", 302)
+	this.Ctx.WriteString("<h1>激活成功！</h1><a href='/login'>点击这里跳转登录</a>")
+	//this.Redirect("/login", 302)
 
 }
 
