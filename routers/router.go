@@ -18,6 +18,7 @@ func init() {
 	//用户登录
 	beego.Router("/login", &controllers.UserController{}, "get:ShowLogin;post:HandleLogin")
 	//商城首页
+	beego.Router("/index", &controllers.GoodsController{}, "get:ShowIndex")
 	beego.Router("/", &controllers.GoodsController{}, "get:ShowIndex")
 	//用户退出
 	beego.Router("/user/logout", &controllers.UserController{}, "get:HandleLogout")
@@ -27,7 +28,10 @@ func init() {
 	beego.Router("/user/userCenterOrder", &controllers.UserController{}, "get:ShowUserOrder")
 	//显示用户中心：用户地址
 	beego.Router("/user/userCenterSite", &controllers.UserController{}, "get:ShowUserSite;post:HandleUserSite")
+	// 显示商品详情
 	beego.Router("/goodsDetail", &controllers.GoodsController{}, "get:ShowGoodsDetail")
+	//显示商品列表
+	beego.Router("/goodsList", &controllers.GoodsController{}, "get:ShowGoodsList")
 }
 
 //全局变量

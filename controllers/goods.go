@@ -68,12 +68,8 @@ func (this *GoodsController) ShowGoodsDetail() {
 	o := orm.NewOrm()
 	o.QueryTable("GoodsSKU").RelatedSel("Goods").Filter("Id", id).One(&sku2goods)
 	this.Data["goodssku"] = sku2goods
-
-	//新品推荐：获取同类型的两条最新商品数据
-	goodsNew := []models.GoodsSKU{}
-	o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", sku2goods.GoodsType.Id).OrderBy("Time").Limit(2, 0).All(&goodsNew)
-	this.Data["goodsNew"] = goodsNew
-
+	//展示新品推荐(2条)
+	GetGoodsRecom(&this.Controller, sku2goods.GoodsType.Id, 2)
 	// 添加用户历史记录
 	//1. 判断用户是否登录
 	if unameBySession == "" {
@@ -92,10 +88,55 @@ func (this *GoodsController) ShowGoodsDetail() {
 	conn.Do("lpush", "history_"+strconv.Itoa(user.Id), id)
 
 }
+func (this *GoodsController) ShowGoodsList() {
+	this.TplName = "list.html"
+	typeId, err := this.GetInt("typeId")
+	if err != nil {
+		log.Println("传入的类型id错误：", err)
+		return
+	}
+	sortId, err := this.GetInt("sortId")
+	if err != nil {
+		log.Println("传入的排序id错误：将按默认排序", err)
+	}
+	//展示登录信息
+	GetUser(&this.Controller)
+	GetGoodsTypes(&this.Controller)
+	//展示新品推荐(2条)
+	GetGoodsRecom(&this.Controller, typeId, 2)
+	//查询该类型的所有SKU
+	goods := make([]models.GoodsSKU, 1)
+	o := orm.NewOrm()
+	//.根据不同排序要求，查询数据.
+	switch sortId {
+	case 1:
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Price").All(&goods)
+		log.Println("已按价格排序")
+	case 2:
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Sales").All(&goods)
+		log.Println("已按人气排序")
+	default:
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).All(&goods)
+		log.Println("已按默认排序")
+		log.Println(sortId)
+	}
+	this.Data["goods"] = goods
+	this.Data["typeId"] = typeId
+
+}
 func GetGoodsTypes(this *beego.Controller) (types []models.GoodsType) {
 	o := orm.NewOrm()
 	o.QueryTable("GoodsType").All(&types)
 	this.Data["types"] = types
-	log.Println("获取类型成功：", types)
+	log.Println("获取商品类型成功")
 	return types
+}
+
+//新品推荐：获取同类型的两条最新商品数据
+// 传入controller,类型id，个数，即可在前端展示新品推荐
+func GetGoodsRecom(this *beego.Controller, typeId int, num int) {
+	goodsNew := []models.GoodsSKU{}
+	o := orm.NewOrm()
+	o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Time").Limit(num, 0).All(&goodsNew)
+	this.Data["goodsNew"] = goodsNew
 }
