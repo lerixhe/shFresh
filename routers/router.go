@@ -27,6 +27,7 @@ func init() {
 	beego.Router("/user/userCenterOrder", &controllers.UserController{}, "get:ShowUserOrder")
 	//显示用户中心：用户地址
 	beego.Router("/user/userCenterSite", &controllers.UserController{}, "get:ShowUserSite;post:HandleUserSite")
+	beego.Router("/goodsDetail", &controllers.GoodsController{}, "get:ShowGoodsDetail")
 }
 
 //全局变量
