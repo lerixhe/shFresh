@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"encoding/base64"
+	"github.com/gomodule/redigo/redis"
 	"log"
 	"regexp"
 	"shFresh/models"
+	"shFresh/redispool"
 	"strconv"
 
 	"github.com/astaxie/beego/utils"
@@ -199,11 +201,11 @@ func (this *UserController) HandleLogout() {
 	this.Redirect("/login", 302)
 }
 
-//显示用户中心：用户信息
+//显示用户中心：用户信息、最近浏览
 func (this *UserController) ShowUserInfo() {
+	this.TplName = "user_center_info.html"
 	userName := GetUser(&this.Controller)
 	this.Data["infoActive"] = "active"
-	this.TplName = "user_center_info.html"
 	//查询用户的地址信息
 	o := orm.NewOrm()
 	var addr models.Address
@@ -213,6 +215,29 @@ func (this *UserController) ShowUserInfo() {
 	this.Data["phoneNum"] = addr.Phone
 	this.Data["address"] = addr.Addr
 
+	// 查询用户最近浏览
+	//1.查询用户信息
+	user := models.User{Name: userName}
+	o.Read(&user, "Name")
+	// 2.1.获取redis链接
+	coon := redispool.Redisclient.Get()
+	defer coon.Close()
+	// 2.2查询
+	rep, err := coon.Do("lrange", "history_"+strconv.Itoa(user.Id), 0, 4)
+	// 2.3回复助手函数
+	goodsIDs, err := redis.Ints(rep, err)
+	if err != nil {
+		log.Println("redis中读取信息失败:", err)
+		return
+	}
+	//3.查询商品SKU
+	goods := make([]models.GoodsSKU, len(goodsIDs))
+	for index, goodsID := range goodsIDs {
+		goods[index].Id = goodsID
+		o.Read(&goods[index])
+	}
+	//4.信息写入视图
+	this.Data["goods"] = goods
 }
 
 //显示用户中心：用户订单
@@ -222,8 +247,9 @@ func (this *UserController) ShowUserOrder() {
 	this.TplName = "user_center_order.html"
 }
 
-//显示用户中心：用户地址
+//显示用户中心：用户收货地址
 func (this *UserController) ShowUserSite() {
+	this.TplName = "user_center_site.html"
 	userName := GetUser(&this.Controller)
 	this.Data["siteActive"] = "active"
 	//使用用户名查询收件地址
@@ -236,7 +262,6 @@ func (this *UserController) ShowUserSite() {
 	}
 	log.Println("查询到以下地址：", addr)
 	this.Data["addr"] = addr
-	this.TplName = "user_center_site.html"
 }
 
 //处理用户提交的地址信息

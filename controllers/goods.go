@@ -5,6 +5,8 @@ import (
 	"github.com/astaxie/beego/orm"
 	"log"
 	"shFresh/models"
+	"shFresh/redispool"
+	"strconv"
 )
 
 type GoodsController struct {
@@ -47,18 +49,17 @@ func (this *GoodsController) ShowIndex() {
 		value["textGoods"] = textGoods
 		value["imageGoods"] = imageGoods
 	}
-	for i := 0; i < len(goods); i++ {
-		for k, y := range goods[i] {
-			log.Println("获取数据：key:", k, "value:", y)
-
-		}
-	}
+	// for i := 0; i < len(goods); i++ {
+	// 	for k, y := range goods[i] {
+	// 		log.Println("获取数据：key:", k, "value:", y)
+	// 	}
+	// }
 	this.Data["goods"] = goods
 }
 
 //展示商品详情
 func (this *GoodsController) ShowGoodsDetail() {
-	GetUser(&this.Controller)
+	unameBySession := GetUser(&this.Controller)
 	GetGoodsTypes(&this.Controller)
 	this.TplName = "detail.html"
 	//根据商品sku的id获取全部sku和spu信息
@@ -72,6 +73,24 @@ func (this *GoodsController) ShowGoodsDetail() {
 	goodsNew := []models.GoodsSKU{}
 	o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", sku2goods.GoodsType.Id).OrderBy("Time").Limit(2, 0).All(&goodsNew)
 	this.Data["goodsNew"] = goodsNew
+
+	// 添加用户历史记录
+	//1. 判断用户是否登录
+	if unameBySession == "" {
+		log.Println("用户未登录，不记录浏览历史")
+		return
+	}
+	//2.查询用户信息
+	user := models.User{Name: unameBySession}
+	o.Read(&user, "Name")
+	//3.添加历史记录，使用redis存储
+	conn := redispool.Redisclient.Get()
+	defer conn.Close()
+	//3.1把以前相同商品的历史记录删除
+	conn.Do("lrem", "history_"+strconv.Itoa(user.Id), 0, id)
+	//3.2把当前浏览的商品id存入key为history_xx的list中
+	conn.Do("lpush", "history_"+strconv.Itoa(user.Id), id)
+
 }
 func GetGoodsTypes(this *beego.Controller) (types []models.GoodsType) {
 	o := orm.NewOrm()
