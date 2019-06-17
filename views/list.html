@@ -1,9 +1,13 @@
 {{template "goods_layout.html" . }}
 {{define "layoutcontent"}}
 	<div class="breadcrumb">
-		<a href="#">全部分类</a>
+		<a href="/">全部分类</a>
 		<span>></span>
-		<a href="#">新鲜水果</a>
+		{{range $index,$value:=.types}}
+			{{if compare .Id $.typeId}}
+				<a href="/goodsList?typeId={{.Id}}">{{.Name}}</a>
+			{{end}}
+		{{end}}
 	</div>
 	<div class="main_wrap clearfix">
 		<div class="l_wrap fl clearfix">

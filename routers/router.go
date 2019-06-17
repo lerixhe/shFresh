@@ -32,6 +32,8 @@ func init() {
 	beego.Router("/goodsDetail", &controllers.GoodsController{}, "get:ShowGoodsDetail")
 	//显示商品列表
 	beego.Router("/goodsList", &controllers.GoodsController{}, "get:ShowGoodsList")
+	// 显示搜索结果
+	beego.Router("/goodsSearch", &controllers.GoodsController{}, "get:ShowSearch")
 }
 
 //全局变量
