@@ -44,12 +44,14 @@
 
 			<div class="pagenation">
 				<a href="#"><上一页</a>
-				<a href="#" class="active">1</a>
-				<a href="#">2</a>
-				<a href="#">3</a>
-				<a href="#">4</a>
-				<a href="#">5</a>
-				<a href="#">下一页></a>
+				{{range $index,$val:= .pages}}
+					{{if compare $val $.pageIndex}}
+						<a href="/goodsList?typeId={{$.typeId}}&sortId={{$.sortId}}&pageIndex={{$val}}" class="active">{{$val}}</a>
+					{{else}}
+						<a href="/goodsList?typeId={{$.typeId}}&pageIndex={{$val}}">{{$val}}</a>
+					{{end}}
+				{{end}}
+					<a href="#">下一页></a>
 			</div>
 		</div>
 	</div>

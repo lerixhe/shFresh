@@ -4,6 +4,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 	"log"
+	"math"
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
@@ -90,46 +91,92 @@ func (this *GoodsController) ShowGoodsDetail() {
 }
 func (this *GoodsController) ShowGoodsList() {
 	this.TplName = "list.html"
+	//获取所选分类
 	typeId, err := this.GetInt("typeId")
 	if err != nil {
 		log.Println("传入的类型id错误：", err)
 		return
 	}
+	//获取用户所选排序
 	sortId, err := this.GetInt("sortId")
 	if err != nil {
-		log.Println("传入的排序id错误：将按默认排序", err)
+		log.Println("未获取到排序id：将按默认排序", err)
+		sortId = 0
 	}
-	//展示登录信息
+	//获取用户所请求的页码
+	pageIndex, err := this.GetInt("pageIndex")
+	if err != nil {
+		log.Println("未获取到页面，默认页码为1", err)
+		pageIndex = 1
+	}
+	//回传所选信息
+	this.Data["typeId"] = typeId
+	this.Data["pageIndex"] = pageIndex
+	this.Data["sortId"] = sortId
+
+	//展示登录信息、商品分类
 	GetUser(&this.Controller)
 	GetGoodsTypes(&this.Controller)
 	//展示新品推荐(2条)
 	GetGoodsRecom(&this.Controller, typeId, 2)
+
+	//分页实现
+	//1.查询总记录数
+	o := orm.NewOrm()
+	count, _ := o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).Count()
+	//2.设定单页记录数
+	pageSize := 4
+	//3.得出所需总页数
+	pageCount := int(math.Ceil(float64(count) / float64(pageSize)))
+	// 4.根据总页数和用户选择的页码，创建页面显示的页码
+	pages := PageTool(pageCount, pageIndex)
+	this.Data["pages"] = pages
+	//5.根据分页，设置数据库查询的开始位置
+	start := (pageIndex - 1) * pageSize
+
 	//查询该类型的所有SKU
 	goods := make([]models.GoodsSKU, 1)
-	o := orm.NewOrm()
-	//.根据不同排序要求，查询数据.
+	//1.根据不同排序要求，查询数据.
 	switch sortId {
 	case 1:
-		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Price").All(&goods)
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Price").Limit(pageSize, start).All(&goods)
 		log.Println("已按价格排序")
 	case 2:
-		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Sales").All(&goods)
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).OrderBy("Sales").Limit(pageSize, start).All(&goods)
 		log.Println("已按人气排序")
 	default:
-		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).All(&goods)
+		o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).Limit(pageSize, start).All(&goods)
 		log.Println("已按默认排序")
 		log.Println(sortId)
 	}
 	this.Data["goods"] = goods
-	this.Data["typeId"] = typeId
 
 }
+
+//获取商品类型：获取所有的商品类型，并输出到页面
 func GetGoodsTypes(this *beego.Controller) (types []models.GoodsType) {
 	o := orm.NewOrm()
 	o.QueryTable("GoodsType").All(&types)
 	this.Data["types"] = types
 	log.Println("获取商品类型成功")
 	return types
+}
+
+//分页助手：使用传递进来的总页数和目标页面，进行合理的分页展示
+func PageTool(pageCount, pageIndex int) (pages []int) {
+	if pageCount <= 5 {
+		pages = make([]int, pageCount)
+		for i := range pages {
+			pages[i] = i + 1
+		}
+	} else if pageIndex <= 3 {
+		pages = []int{1, 2, 3, 4, 5}
+	} else if pageIndex > pageCount-3 {
+		pages = []int{pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount}
+	} else {
+		pages = []int{pageCount - 2, pageCount - 1, pageCount, pageCount + 1, pageCount + 2}
+	}
+	return
 }
 
 //新品推荐：获取同类型的两条最新商品数据
