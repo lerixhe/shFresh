@@ -125,7 +125,7 @@ func (this *GoodsController) ShowGoodsList() {
 	o := orm.NewOrm()
 	count, _ := o.QueryTable("GoodsSKU").RelatedSel("GoodsType").Filter("GoodsType__Id", typeId).Count()
 	//2.设定单页记录数
-	pageSize := 4
+	pageSize := 3
 	//3.得出所需总页数
 	pageCount := int(math.Ceil(float64(count) / float64(pageSize)))
 	// 4.根据总页数和用户选择的页码，创建页面显示的页码
@@ -133,6 +133,18 @@ func (this *GoodsController) ShowGoodsList() {
 	this.Data["pages"] = pages
 	//5.根据分页，设置数据库查询的开始位置
 	start := (pageIndex - 1) * pageSize
+	//获取上一页页码
+	prePage := pageIndex - 1
+	if prePage <= 1 {
+		prePage = 1
+	}
+	this.Data["prePage"] = prePage
+	//获取下一页页码
+	nextPage := pageIndex + 1
+	if nextPage > pageCount {
+		nextPage = pageCount
+	}
+	this.Data["nextPage"] = nextPage
 
 	//查询该类型的所有SKU
 	goods := make([]models.GoodsSKU, 1)
