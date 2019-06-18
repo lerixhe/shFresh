@@ -34,8 +34,10 @@ func init() {
 	beego.Router("/goodsList", &controllers.GoodsController{}, "get:ShowGoodsList")
 	// 显示搜索结果
 	beego.Router("/goodsSearch", &controllers.GoodsController{}, "get:ShowSearch")
-	// 添加购物车
-	beego.Router("/user/addCart", &controllers.CartController{}, "get:ShowCart;post:HandleAddCart")
+	// 添加到购物车
+	beego.Router("/user/addCart", &controllers.CartController{}, "post:HandleAddCart")
+	// 显示购物车
+	beego.Router("/user/cart", &controllers.CartController{}, "get:ShowCart")
 }
 
 //全局变量
