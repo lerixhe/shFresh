@@ -187,14 +187,6 @@ func (this *UserController) HandleLogin() {
 
 }
 
-//显示首页
-func (this *UserController) ShowIndex() {
-	//登录判断
-	//思路：开启session存储登录信息，使用路由过滤器控制访问权限
-
-	this.TplName = "index.html"
-}
-
 //退出登录
 func (this *UserController) HandleLogout() {
 	this.DelSession("userName")

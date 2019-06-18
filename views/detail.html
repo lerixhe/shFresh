@@ -35,7 +35,8 @@
 			<div class="total">总价：<em>元</em></div>
 			<div class="operate_btn">
 				<a href="javascript:;" class="buy_btn">立即购买</a>
-				<a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>				
+				<!-- 给购物车添加自定义属性skuid，以传递值给js处理 -->
+				<a href="javascript:;" class="add_cart" id="add_cart" skuid="{{.goodssku.Id}}">加入购物车</a>				
 			</div>
 		</div>
 	</div>
@@ -125,16 +126,38 @@
 		var $to_x = $('#show_count').offset().top;
 		var $to_y = $('#show_count').offset().left;
 
-		$(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'})
 		$('#add_cart').click(function(){
-			$(".add_jump").stop().animate({
-				'left': $to_y+7,
-				'top': $to_x+7},
-				"fast", function() {
-					$(".add_jump").fadeOut('fast',function(){
-						$('#show_count').html(2);
+			// ajaks
+			// 获取购物车的href属性
+			// $('#add_cart').prop('href') 
+			// 获取购物车的自定义属性skuid
+			skuid = $('#add_cart').attr('skuid')
+			// alert并非格式化输出，不要当成println来用
+			// alert(skuid)
+			count = $('.num_show').val()
+			// alert(count)
+			// 构建一个json字符串
+			param={"skuid":skuid,"count":count}
+			$.post('/user/addCart',param,function(data){
+				if(data.code == 5){
+					$(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'})
+					$(".add_jump").stop().animate(
+						{'left': $to_y+7,'top': $to_x+7},
+						"fast", 
+						function() {
+							$(".add_jump").fadeOut('fast',
+								function(){
+								$('#show_count').html(data.cartCount);
+								}
+							);
 					});
-				});
+					// alert(data.cartCount)
+				}else{
+					alert(data)
+				}
 			})
+
+			
+		})
 		</script>
 	{{end}}

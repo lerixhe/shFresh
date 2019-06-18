@@ -17,6 +17,8 @@ type GoodsController struct {
 func (this *GoodsController) ShowIndex() {
 	GetUser(&this.Controller)
 	this.TplName = "index.html"
+	//获取购物车数据
+	GetCartCount(&this.Controller)
 	//获取类型数据
 	types := GetGoodsTypes(&this.Controller)
 	//获取首页轮播图数据
@@ -62,6 +64,8 @@ func (this *GoodsController) ShowIndex() {
 func (this *GoodsController) ShowGoodsDetail() {
 	unameBySession := GetUser(&this.Controller)
 	GetGoodsTypes(&this.Controller)
+	//获取购物车数据
+	GetCartCount(&this.Controller)
 	this.TplName = "detail.html"
 	//根据商品sku的id获取全部sku和spu信息
 	id, _ := this.GetInt("id")
@@ -69,7 +73,8 @@ func (this *GoodsController) ShowGoodsDetail() {
 	o := orm.NewOrm()
 	o.QueryTable("GoodsSKU").RelatedSel("Goods").Filter("Id", id).One(&sku2goods)
 	this.Data["goodssku"] = sku2goods
-
+	//获取购物车数据
+	GetCartCount(&this.Controller)
 	//展示新品推荐(2条)
 	GetGoodsRecom(&this.Controller, sku2goods.GoodsType.Id, 2)
 	// 添加用户历史记录
@@ -120,6 +125,8 @@ func (this *GoodsController) ShowGoodsList() {
 	GetGoodsTypes(&this.Controller)
 	//展示新品推荐(2条)
 	GetGoodsRecom(&this.Controller, typeId, 2)
+	//获取购物车数据
+	GetCartCount(&this.Controller)
 
 	//分页实现
 	//1.查询总记录数
@@ -176,6 +183,8 @@ func (this *GoodsController) ShowSearch() {
 	//展示登录信息、商品分类
 	GetGoodsTypes(&this.Controller)
 	GetUser(&this.Controller)
+	//获取购物车商品数量
+	GetCartCount(&this.Controller)
 
 	//获取用户所选排序
 	sortId, err := this.GetInt("sortId")
