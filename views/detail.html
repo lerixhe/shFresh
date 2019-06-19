@@ -139,7 +139,9 @@
 			// 构建一个json字符串
 			param={"skuid":skuid,"count":count}
 			$.post('/user/addCart',param,function(data){
-				if(data.code == 5){
+				if(data.code==undefined){
+				　window.location.href="/login";
+				}else	if(data.code == 5){
 					$(".add_jump").css({'left':$add_y+80,'top':$add_x+10,'display':'block'})
 					$(".add_jump").stop().animate(
 						{'left': $to_y+7,'top': $to_x+7},
@@ -153,7 +155,7 @@
 					});
 					// alert(data.cartCount)
 				}else{
-					alert(data)
+					alert(data.msg)
 				}
 			})
 

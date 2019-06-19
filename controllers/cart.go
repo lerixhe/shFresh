@@ -57,9 +57,10 @@ func (this *CartController) HandleAddCart() {
 	// 登录状态处理
 	userName := this.GetSession("userName")
 	if userName == nil {
-		resp["code"] = 1
-		resp["msg"] = "用户未登录"
-		this.Data["json"] = resp
+		// resp["code"] = 1
+		// resp["msg"] = "用户未登录"
+		// this.Data["json"] = resp
+		this.Redirect("/", 302)
 		return
 	}
 	skuid, err := this.GetInt("skuid")
@@ -88,6 +89,39 @@ func (this *CartController) HandleAddCart() {
 	resp["cartCount"] = cartCount
 	this.Data["json"] = resp
 
+}
+
+// 处理更新购物车的请求
+func (this *CartController) HandleUpdateCart() {
+	// 获取数据
+	skuid, err := this.GetInt("skuid")
+	count, err := this.GetInt("count")
+	// 定义回复包
+	resp := make(map[string]interface{})
+	defer this.ServeJSON()
+	// 校验数据
+	if err != nil {
+		resp["code"] = 1
+		resp["msg"] = "请求数据不正确"
+		this.Data["json"] = resp
+		return
+	}
+	userName := this.GetSession("userName")
+	if userName == nil {
+		resp["code"] = 2
+		resp["msg"] = "当前用户未登录"
+		this.Data["json"] = resp
+	}
+	user := models.User{Name: userName.(string)}
+	o := orm.NewOrm()
+	o.Read(&user, "Name")
+	// 处理数据
+	conn := redispool.Redisclient.Get()
+	defer conn.Close()
+	conn.Do("hset", "cart_"+strconv.Itoa(user.Id), skuid, count)
+	resp["code"] = 200
+	resp["msg"] = "OK"
+	this.Data["json"] = resp
 }
 
 // 获取购物车中商品数量

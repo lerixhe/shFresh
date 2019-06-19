@@ -38,6 +38,8 @@ func init() {
 	beego.Router("/user/addCart", &controllers.CartController{}, "post:HandleAddCart")
 	// 显示购物车
 	beego.Router("/user/cart", &controllers.CartController{}, "get:ShowCart")
+	// 更新购物车
+	beego.Router("/user/UpdateCart", &controllers.CartController{}, "post:HandleUpdateCart")
 }
 
 //全局变量

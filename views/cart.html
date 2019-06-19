@@ -68,7 +68,7 @@
 			<li class="col06">
 				<div class="num_add">
 					<a href="javascript:;" class="add fl">+</a>
-					<input type="text" class="num_show fl" value={{.count}}>	
+					<input type="text" class="num_show fl" skuid="{{.goodssku.Id}}" value={{.count}}>	
 					<a href="javascript:;" class="minus fl">-</a>	
 				</div>
 			</li>
@@ -147,6 +147,75 @@
 		}
 		UpdateGoodsPrice()
 	})
-	
+	// 增加商品数量
+	$('.add').click(function(){
+		count=$(this).next().val()
+		count=parseInt(count)+1
+		skuid=parseInt($(this).next().attr('skuid'))
+		param={"skuid":skuid,"count":count}
+		// ajxs是异步执行的，若有用变量保存状态再判断执行的需求（有先后顺序），需要解除异步。
+		errUpdate=true
+		$.ajaxSettings.async=false
+		$.post('/user/UpdateCart',param,function(data){
+			if(data.code==undefined){
+				　window.location.href="/login";
+			}else	if(data.code!=200){
+				// 发生其他错误
+				alert(data.msg)
+				errUpdate=true
+			}else{
+				errUpdate=false
+			}
+		})
+		// 及时打开ajax的异步
+		$.ajaxSettings.async=true
+		if(!errUpdate){
+			$(this).next().val(count)
+			// 小计随数量变化
+			price=$(this).parents('ul').children('.col05').text()
+			price=parseFloat(price)
+			amount=count * price
+			// 更新小计
+			price=$(this).parents('ul').children('.col07').text(amount)
+			// 更新总价和数量
+			UpdateGoodsPrice()
+		}
+	})
+	// 减少商品数量
+	$('.minus').click(function(){
+		count=$(this).prev().val()
+		count=parseInt(count)-1
+		if (count<1){
+			alert("数量不能小于1")
+			count=1
+			$(this).prev().val(count)
+			return
+		}
+		skuid=$(this).prev().attr('skuid')
+		param={"skuid":skuid,"count":count}
+		errUpdate=true
+		$.ajaxSettings.async=false
+		$.post('/user/UpdateCart',param,function(data){
+			if(data.code==undefined){
+				window.location.href="/login"
+			}else if(data.code==200){
+				errUpdate=false
+			}else{
+				alert(data.msg)
+			}
+		})
+		$.ajaxSettings.async=true
+		if(!errUpdate){
+			$(this).prev().val(count)
+			// 小计随数量变化
+			price=$(this).parents('ul').children('.col05').text()
+			price=parseFloat(price)
+			amount=count * price
+			// 更新小计
+			price=$(this).parents('ul').children('.col07').text(amount)
+			// 更新总价和数量
+			UpdateGoodsPrice()
+		}
+	})
 </script>
 </html>
