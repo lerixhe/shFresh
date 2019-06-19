@@ -29,6 +29,8 @@ func (this *CartController) ShowCart() {
 	// 创建一个容器，存储商品列表。
 	// 将redis中的map[string]int 转为[]map[string]interface{}
 	goods := []map[string]interface{}{}
+	totalPrice := 0
+	totalCount := 0
 	for k, v := range goodsMap {
 		id, _ := strconv.Atoi(k)
 		goodsSKU := models.GoodsSKU{Id: id}
@@ -36,9 +38,14 @@ func (this *CartController) ShowCart() {
 		temp := make(map[string]interface{})
 		temp["goodssku"] = goodsSKU
 		temp["count"] = v
+		temp["addPrice"] = goodsSKU.Price * v
 		goods = append(goods, temp)
+		totalPrice += goodsSKU.Price * v
+		totalCount += v
 	}
 	this.Data["goods"] = goods
+	this.Data["totalCount"] = totalCount
+	this.Data["totalPrice"] = totalPrice
 }
 
 //接受并处理【加入购物车】产生的post请求

@@ -48,8 +48,7 @@
 				</form>
 		</div>		
 	</div>
-
-	<div class="total_count">全部商品<em>2</em>件</div>	
+	<div class="total_count">全部商品<em>{{.totalCount}}</em>件</div>	
 	<ul class="cart_list_th clearfix">
 		<li class="col01">商品名称</li>
 		<li class="col02">商品单位</li>
@@ -61,7 +60,7 @@
 
 	{{range .goods}}
 		<ul class="cart_list_td clearfix">
-			<li class="col01"><input type="checkbox" name="" checked></li>
+			<li class="col01"><input type="checkbox" name="" checked=""></li>
 			<li class="col02"><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"></li>
 			<li class="col03">{{.goodssku.Name}}<br><em>{{.goodssku.Price}}元/{{.goodssku.Unite}}</em></li>
 			<li class="col04">{{.goodssku.Unite}}</li>
@@ -69,11 +68,11 @@
 			<li class="col06">
 				<div class="num_add">
 					<a href="javascript:;" class="add fl">+</a>
-					<input type="text" class="num_show fl" value="{{.count}}">	
+					<input type="text" class="num_show fl" value={{.count}}>	
 					<a href="javascript:;" class="minus fl">-</a>	
 				</div>
 			</li>
-			<li class="col07">25.80元</li>
+			<li class="col07">{{.addPrice}}元</li>
 			<li class="col08"><a href="javascript:;">删除</a></li>
 		</ul>
 	{{end}}
@@ -82,7 +81,7 @@
 	<ul class="settlements">
 		<li class="col01"><input type="checkbox" name="" checked=""></li>
 		<li class="col02">全选</li>
-		<li class="col03">合计(不含运费)：<span>¥</span><em>42.60</em><br>共计<b>2</b>件商品</li>
+		<li class="col03">合计(不含运费)：<span>¥</span><em>{{.totalPrice}}</em><br>共计<b>{{.totalCount}}</b>件商品</li>
 		<li class="col04"><a href="place_order.html">去结算</a></li>
 	</ul>
 
@@ -101,8 +100,53 @@
 	</div>
 	
 
-	<script type="text/javascript">
 	
-	</script>
 </body>
+<!-- 单独写script标签引入jquery？ -->
+<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript">
+// 根据用户购物车变动总价和总件数
+	function UpdateGoodsPrice(){
+		totalCount=0
+		totalPrice  =0
+		$('.cart_list_td').find(':checked').parents('ul').each(function(){
+				count=$(this).children('.col06').children('.num_add').children('.num_show').val()
+				price=$(this).children('.col07').text()
+				count=parseInt(count)
+				price=parseFloat(price)
+				// 叠加
+				totalCount+=count
+				totalPrice  +=price
+			}
+		)				
+		// alert(totalCount)
+		$('.settlements').children('.col03').children('em').text(totalPrice)
+		$('.settlements').children('.col03').children('b').text(totalCount)
+		$('.total_count').children('em').text(totalCount)		
+	}
+	// 设置全选与全不选的触发结果
+	$('.settlements').find(':checkbox').change(function(){//必须使用find获取这个复选框
+		// 获取当前选中状态
+		is_checked = $(this).prop('checked')
+		// 设置所有状态与其保持一直
+		$('.cart_list_td').find(':checkbox').each(function(){
+			$(this).prop('checked',is_checked)
+		})
+	
+		// 更新子女的总价格
+		UpdateGoodsPrice()
+	})
+	// 根据商品的改变而改变全选状态
+	$('.cart_list_td').find(':checkbox').change(function(){
+		checkboxLength=$('.cart_list_td').find(':checkbox').length
+		checkedLength=$('.cart_list_td').find(':checked').length
+		if(checkboxLength>checkedLength){
+			$('.settlements').find(':checkbox').prop('checked',"")
+		}else{
+			$('.settlements').find(':checkbox').prop('checked',"checked")
+		}
+		UpdateGoodsPrice()
+	})
+	
+</script>
 </html>
