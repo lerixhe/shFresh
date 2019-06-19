@@ -72,8 +72,8 @@
 					<a href="javascript:;" class="minus fl">-</a>	
 				</div>
 			</li>
-			<li class="col07">{{.addPrice}}元</li>
-			<li class="col08"><a href="javascript:;">删除</a></li>
+			<li class="col07">{{.addPrice}}.00元</li>
+			<li class="col08"><a href="javascript:;"  class="deleteCart" skuid="{{.goodssku.Id}}">删除</a></li>
 		</ul>
 	{{end}}
 	
@@ -175,7 +175,7 @@
 			price=parseFloat(price)
 			amount=count * price
 			// 更新小计07
-			price=$(this).parents('ul').children('.col07').text(amount+"元")
+			price=$(this).parents('ul').children('.col07').text(amount.toFixed(2)+"元")
 			// 更新总价和数量
 			UpdateGoodsPrice()
 		}
@@ -211,7 +211,7 @@
 			price=parseFloat(price)
 			amount=count * price
 			// 更新小计
-			price=$(this).parents('ul').children('.col07').text(amount+"元")
+			price=$(this).parents('ul').children('.col07').text(amount.toFixed(2)+"元")
 			// 更新总价和数量
 			UpdateGoodsPrice()
 		}
@@ -255,8 +255,31 @@
 			price=parseFloat(price)
 			amount=count * price
 			// 更新小计
-			price=$(this).parents('ul').children('.col07').text(amount+"元")
+			price=$(this).parents('ul').children('.col07').text(amount.toFixed(2)+"元")
 			// 更新总价和数量
+			UpdateGoodsPrice()
+		}
+	})
+	// 删除某个商品
+	$('.deleteCart').click(function(){
+		skuid=parseInt($(this).attr('skuid'))
+		param={"skuid":skuid}
+		errUpdate=true
+		$.ajaxSettings.async=false
+		$.post('/user/deleteCart',param,function(data){
+			if(data.code==undefined){
+				window.location.href="/login"
+			}else if(data.code==200){
+				// 方法1：window.location.href="/user/cart" 
+				// 方法2:前端删除
+				errUpdate=false
+			}else{
+				alert(msg) 
+			}
+		})
+		$.ajaxSettings.async=true
+		if(!errUpdate){
+			$(this).parents('ul').remove()
 			UpdateGoodsPrice()
 		}
 	})

@@ -147,3 +147,40 @@ func GetCartCount(this *beego.Controller) (cartCount int) {
 	log.Println("获取购物车商品数量成功：", cartCount)
 	return
 }
+
+// 处理删除购物车请求
+func (this *CartController) DeleteCart() {
+	skuid, err := this.GetInt("skuid")
+	log.Println("iii", skuid)
+	if err != nil {
+		log.Println("请求数据错误：", err)
+		return
+	}
+	resp := make(map[string]interface{})
+	defer this.ServeJSON()
+	userName := this.GetSession("userName")
+	if userName == nil {
+		resp["code"] = 1
+		resp["msg"] = "用户未登录"
+		this.Data["json"] = resp
+		return
+	}
+	o := orm.NewOrm()
+	user := models.User{Name: userName.(string)}
+	o.Read(&user, "Name")
+	conn := redispool.Redisclient.Get()
+	defer conn.Close()
+	_, err = conn.Do("hdel", "cart_"+strconv.Itoa(user.Id), skuid)
+	if err != nil {
+		resp["code"] = 2
+		resp["msg"] = "内部错误"
+		this.Data["json"] = resp
+		return
+	}
+
+	resp["code"] = 200
+	resp["msg"] = "ok"
+	this.Data["json"] = resp
+	return
+
+}
