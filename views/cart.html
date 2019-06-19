@@ -132,8 +132,7 @@
 		$('.cart_list_td').find(':checkbox').each(function(){
 			$(this).prop('checked',is_checked)
 		})
-	
-		// 更新子女的总价格
+		// 更新商品的总价格
 		UpdateGoodsPrice()
 	})
 	// 根据商品的改变而改变全选状态
@@ -175,8 +174,8 @@
 			price=$(this).parents('ul').children('.col05').text()
 			price=parseFloat(price)
 			amount=count * price
-			// 更新小计
-			price=$(this).parents('ul').children('.col07').text(amount)
+			// 更新小计07
+			price=$(this).parents('ul').children('.col07').text(amount+"元")
 			// 更新总价和数量
 			UpdateGoodsPrice()
 		}
@@ -212,7 +211,51 @@
 			price=parseFloat(price)
 			amount=count * price
 			// 更新小计
-			price=$(this).parents('ul').children('.col07').text(amount)
+			price=$(this).parents('ul').children('.col07').text(amount+"元")
+			// 更新总价和数量
+			UpdateGoodsPrice()
+		}
+	})
+	//手动输入商品数量
+	preCount = 0//全局变量，存放共享内容
+	$('.num_show').focus(function(){
+		preCount=$(this).val()
+	})
+	$('.num_show').blur(function(){
+		count=$(this).val()
+		if(isNaN(count) || count.trim().length==0 || parseInt(count) <1){
+			// 输入值不符合规则，则恢复初始值
+			alert("数据不合法，请重新输入")
+			$(this).val(preCount)
+			// alert(preCount)
+			return
+		}
+		skuid=parseInt($(this).attr('skuid'))
+		count=parseInt(count)
+		param={"skuid":skuid,"count":count}
+		errUpdate=true
+		$.ajaxSettings.async=false
+		$.post('/user/UpdateCart',param,function(data){
+			if(data.code==undefined){
+				alert("用户未登录，请登录！")
+				window.location.href="/login"
+				return
+			}else if(data.code==200){
+				errUpdate=false
+			}else{
+				errUpdate=true
+				alert(data.msg)
+			}
+		})
+		$.ajaxSettings.async=true
+		if(!errUpdate){
+			$(this).val(count)
+			// 小计随数量变化
+			price=$(this).parents('ul').children('.col05').text()
+			price=parseFloat(price)
+			amount=count * price
+			// 更新小计
+			price=$(this).parents('ul').children('.col07').text(amount+"元")
 			// 更新总价和数量
 			UpdateGoodsPrice()
 		}
