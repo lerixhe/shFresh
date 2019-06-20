@@ -42,6 +42,10 @@ func init() {
 	beego.Router("/user/UpdateCart", &controllers.CartController{}, "post:HandleUpdateCart")
 	// 删除购物车商品
 	beego.Router("/user/deleteCart", &controllers.CartController{}, "post:DeleteCart")
+	// 显示订单页面
+	beego.Router("/user/showOrder", &controllers.OrderController{}, "post:ShowOrder")
+	// 创建订单
+	beego.Router("/user/addOrder", &controllers.OrderController{}, "post:AddOrder")
 }
 
 //全局变量
