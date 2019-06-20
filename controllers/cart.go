@@ -14,6 +14,7 @@ type CartController struct {
 	beego.Controller
 }
 
+// 显示购物车的请求
 func (this *CartController) ShowCart() {
 	this.TplName = "cart.html"
 	userName := GetUser(&this.Controller)

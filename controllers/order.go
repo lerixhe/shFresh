@@ -8,6 +8,7 @@ import (
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -69,7 +70,12 @@ func (this *OrderController) ShowOrder() {
 	this.Data["transferPrice"] = transferPrice
 	discount := 18
 	this.Data["discount"] = discount
-	this.Data["actualPayment"] = totalPrice + transferPrice - discount
+	actualPayment := totalPrice + transferPrice - discount
+	if actualPayment <= 0 {
+		actualPayment = 0
+		// 实付款不能小于0
+	}
+	this.Data["actualPayment"] = actualPayment
 	// 传递所有商品id
 	this.Data["skuids"] = skuids
 
@@ -85,8 +91,11 @@ func (this *OrderController) AddOrder() {
 	// 获取数据
 	addrId, _ := this.GetInt("addrId")
 	payId, _ := this.GetInt("payId")
-	skuids := this.GetStrings("skuids")
-	log.Println(skuids)
+	skuidString := this.GetString("skuids")
+	// 获取到的skuidsString为类型切片形式的字符串类型，需要进行剪裁转换为字符串
+	ids := skuidString[1 : len(skuidString)-1]
+	skuids := strings.Fields(ids)
+	log.Println("用户提交订单中的商品iD", skuids)
 	totalCount, _ := this.GetInt("totalCount")
 	totalPrice, _ := this.GetInt("totalPrice")
 	discount, _ := this.GetInt("discount")
@@ -112,7 +121,9 @@ func (this *OrderController) AddOrder() {
 	}
 	// 处理数据：
 	// 1.向订单表中插入数据
+	// 需注意订单整个流程为事物操作
 	o := orm.NewOrm()
+	o.Begin()
 	user := models.User{Name: userName.(string)}
 	o.Read(&user, "Name")
 	addr := models.Address{Id: addrId}
@@ -133,14 +144,15 @@ func (this *OrderController) AddOrder() {
 	if err != nil {
 		resp["code"] = 3
 		resp["msg"] = "订单生成失败"
-		log.Println("订单生成失败:", err)
 		this.Data["json"] = resp
+		o.Rollback()
+		log.Println("订单生成失败,已回滚:", err)
 		return
 	}
 	// 向订单商品表中插入数据
 	conn := redispool.Redisclient.Get()
 	defer conn.Close()
-	for _, value := range skuids[0] {
+	for _, value := range skuids {
 		skuid, _ := strconv.Atoi(string(value))
 		log.Println(skuid)
 		goods := models.GoodsSKU{Id: skuid}
@@ -153,7 +165,19 @@ func (this *OrderController) AddOrder() {
 		if err != nil {
 			resp["code"] = 3
 			resp["msg"] = "订单商品获取失败"
-			log.Println("订单商品获取失败：", err)
+			o.Rollback()
+			log.Println("订单商品获取失败,已回滚：", err)
+			this.Data["json"] = resp
+			return
+		}
+		// 判断库存
+		if count > goods.Stock {
+			// 库存不足
+			resp["code"] = 4
+			resp["msg"] = "存在库存不足的商品，请返回购物车查看"
+			o.Rollback()
+			log.Println("存在库存不足的商品.操作已回滚，信息如下：", err)
+			log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
 			this.Data["json"] = resp
 			return
 		}
@@ -165,6 +189,7 @@ func (this *OrderController) AddOrder() {
 	// 操作成功，返回成功信息
 	resp["code"] = 200
 	resp["msg"] = "OK"
+	o.Commit()
 	log.Println("订单创建成功！")
 	this.Data["json"] = resp
 	return
