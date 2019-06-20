@@ -197,10 +197,12 @@ func (this *OrderController) AddOrder() {
 			preStock := goods.Stock
 			// time.Sleep(5 * time.Second)
 			log.Printf("当前用户：%d,当前记录的库存：%d", user.Id, preStock)
-			//1 执行单个插入,完成订单创建
-			o.Insert(&orderGoods)
+
+			//1 执行单个插入,初步完成订单创建
 			orderGoods.Count = count
 			orderGoods.Price = count * goods.Price
+			o.Insert(&orderGoods)
+
 			//2 更新库存，仅是这里更新没用，需要同步到数据库。
 			goods.Stock -= count
 			goods.Sales += count

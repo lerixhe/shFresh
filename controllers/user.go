@@ -234,9 +234,28 @@ func (this *UserController) ShowUserInfo() {
 
 //显示用户中心：用户订单
 func (this *UserController) ShowUserOrder() {
-	GetUser(&this.Controller)
+	userName := GetUser(&this.Controller)
 	this.Data["orderActive"] = "active"
 	this.TplName = "user_center_order.html"
+	// 获取用户的订单，订单商品
+	o := orm.NewOrm()
+	user := models.User{Name: userName}
+	o.Read(&user, "Name")
+	orderInfos := []models.OrderInfo{}
+	o.QueryTable("OrderInfo").Filter("User__Id", user.Id).All(&orderInfos)
+
+	// 定义一个切片容器，可存多种类型数据
+	container := make([]map[string]interface{}, len(orderInfos))
+	for index, orderInfo := range orderInfos {
+		orderGoods := []models.OrderGoods{}
+		o.QueryTable("OrderGoods").RelatedSel("OrderInfo", "GoodsSKU").Filter("OrderInfo__Id", orderInfo.Id).All(&orderGoods)
+		temp := map[string]interface{}{
+			"orderInfo":  orderInfo,
+			"orderGoods": orderGoods,
+		}
+		container[index] = temp
+	}
+	this.Data["container"] = container
 }
 
 //显示用户中心：用户收货地址
