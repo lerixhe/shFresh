@@ -165,6 +165,7 @@ func (this *OrderController) AddOrder() {
 		// 这样的操作限制过于严格，若库存十分充足，发生并发冲突，导致用户下单经常回滚，
 		// 为提升用户体验，后台循环若干次自动代用户重新发起请求。
 		// 这里限制循环次数：3，若3此仍失败，才返回并发库存错误
+		//
 		i := 3
 		for i > 0 {
 			o.Read(&goods)
@@ -195,7 +196,7 @@ func (this *OrderController) AddOrder() {
 			// 获取此刻的库存，并保存
 			preStock := goods.Stock
 			// time.Sleep(5 * time.Second)
-
+			log.Printf("当前用户：%d,当前记录的库存：%d", user.Id, preStock)
 			//1 执行单个插入,完成订单创建
 			o.Insert(&orderGoods)
 			orderGoods.Count = count
@@ -210,7 +211,7 @@ func (this *OrderController) AddOrder() {
 				resp["msg"] = "数据库查询商品信息失败"
 				o.Rollback()
 				log.Println("操作已回滚，信息如下：", err)
-				log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
+				log.Printf("用户id:%d,商品id:%d,库存数量：%d,所需数量：%d", user.Id, skuid, goods.Stock, count)
 				this.Data["json"] = resp
 				return
 			}
@@ -218,26 +219,32 @@ func (this *OrderController) AddOrder() {
 			// 执行更新库存前，验证库存，发现库存已改变，则撤销所有操作
 			if updateCount == 0 {
 				if i > 0 {
-					i--
 					// 本次尝试失败且还有尝试机会
+					i--
+					log.Printf("用户id:%d,本次尝试失败,正在尝试第%d次机会", user.Id, 4-i)
 					continue
 				}
-				// 本次尝试失败但没有尝试机会了
-				resp["code"] = 6
-				resp["msg"] = "商品被别人抢先啦，库存不足，订单提交失败"
-				o.Rollback()
-				log.Println("操作已回滚，信息如下：", err)
-				log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
-				this.Data["json"] = resp
-				return
 			} else {
 				// 本次尝试成功，无需再次尝试
+				log.Printf("本次尝试成功，终止尝试")
 				break
 			}
 		}
+		// 尝试结束，判断是用尽机会还是尝试成功
+		if i == 0 {
+			// 没有尝试机会了
+			resp["code"] = 6
+			resp["msg"] = "购买人数太多了，本次订单提交失败"
+			o.Rollback()
+			log.Println("操作已回滚：", err)
+			this.Data["json"] = resp
+			return
+		}
+		// 尝试成功了
 		// 购物车中对应的商品删除
 		conn.Do("hdel", "cart_"+strconv.Itoa(user.Id), goods.Id)
 	}
+
 	// 操作成功，返回成功信息
 	resp["code"] = 200
 	resp["msg"] = "OK"
