@@ -121,7 +121,11 @@ func (this *OrderController) AddOrder() {
 	}
 	// 处理数据：
 	// 1.向订单表中插入数据
-	// 需注意订单整个流程为事物操作
+	// 需注意订单整个流程为事物操作，包括：
+	// 1插入订单表记录，
+	// 2插入订单商品表记录，
+	//,3更新SKU表中的库存与销量
+	// 一步撤销，步步撤销
 	o := orm.NewOrm()
 	o.Begin()
 	user := models.User{Name: userName.(string)}
@@ -156,35 +160,83 @@ func (this *OrderController) AddOrder() {
 		skuid, _ := strconv.Atoi(string(value))
 		log.Println(skuid)
 		goods := models.GoodsSKU{Id: skuid}
-		o.Read(&goods)
-		orderGoods := models.OrderGoods{
-			GoodsSKU:  &goods,
-			OrderInfo: &order,
+
+		// 多用户并发改库存情况导致超卖问题，采用的处理机制是核验库存不一致就回滚，
+		// 这样的操作限制过于严格，若库存十分充足，发生并发冲突，导致用户下单经常回滚，
+		// 为提升用户体验，后台循环若干次自动代用户重新发起请求。
+		// 这里限制循环次数：3，若3此仍失败，才返回并发库存错误
+		i := 3
+		for i > 0 {
+			o.Read(&goods)
+			orderGoods := models.OrderGoods{
+				GoodsSKU:  &goods,
+				OrderInfo: &order,
+			}
+			count, err := redis.Int(conn.Do("hget", "cart_"+strconv.Itoa(user.Id), skuid))
+			if err != nil {
+				resp["code"] = 3
+				resp["msg"] = "订单商品获取失败"
+				o.Rollback()
+				log.Println("订单商品获取失败,已回滚：", err)
+				this.Data["json"] = resp
+				return
+			}
+			// 判断库存
+			if count > goods.Stock {
+				// 库存不足
+				resp["code"] = 4
+				resp["msg"] = "存在库存不足的商品，请返回购物车查看"
+				o.Rollback()
+				log.Println("存在库存不足的商品.操作已回滚，信息如下：", err)
+				log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
+				this.Data["json"] = resp
+				return
+			}
+			// 获取此刻的库存，并保存
+			preStock := goods.Stock
+			// time.Sleep(5 * time.Second)
+
+			//1 执行单个插入,完成订单创建
+			o.Insert(&orderGoods)
+			orderGoods.Count = count
+			orderGoods.Price = count * goods.Price
+			//2 更新库存，仅是这里更新没用，需要同步到数据库。
+			goods.Stock -= count
+			goods.Sales += count
+			// 注意1和2再多用户并发操作时，导致超卖，故执行更新最新库存之前需要先查询库存跟之前取出来的是否一致
+			updateCount, err := o.QueryTable("GoodsSKU").Filter("Id", goods.Id).Filter("Stock", preStock).Update(orm.Params{"Stock": goods.Stock, "Sales": goods.Sales})
+			if err != nil {
+				resp["code"] = 5
+				resp["msg"] = "数据库查询商品信息失败"
+				o.Rollback()
+				log.Println("操作已回滚，信息如下：", err)
+				log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
+				this.Data["json"] = resp
+				return
+			}
+
+			// 执行更新库存前，验证库存，发现库存已改变，则撤销所有操作
+			if updateCount == 0 {
+				if i > 0 {
+					i--
+					// 本次尝试失败且还有尝试机会
+					continue
+				}
+				// 本次尝试失败但没有尝试机会了
+				resp["code"] = 6
+				resp["msg"] = "商品被别人抢先啦，库存不足，订单提交失败"
+				o.Rollback()
+				log.Println("操作已回滚，信息如下：", err)
+				log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
+				this.Data["json"] = resp
+				return
+			} else {
+				// 本次尝试成功，无需再次尝试
+				break
+			}
 		}
-		count, err := redis.Int(conn.Do("hget", "cart_"+strconv.Itoa(user.Id), skuid))
-		if err != nil {
-			resp["code"] = 3
-			resp["msg"] = "订单商品获取失败"
-			o.Rollback()
-			log.Println("订单商品获取失败,已回滚：", err)
-			this.Data["json"] = resp
-			return
-		}
-		// 判断库存
-		if count > goods.Stock {
-			// 库存不足
-			resp["code"] = 4
-			resp["msg"] = "存在库存不足的商品，请返回购物车查看"
-			o.Rollback()
-			log.Println("存在库存不足的商品.操作已回滚，信息如下：", err)
-			log.Printf("商品id:%d,库存数量：%d,所需数量：%d", skuid, goods.Stock, count)
-			this.Data["json"] = resp
-			return
-		}
-		orderGoods.Count = count
-		orderGoods.Price = count * goods.Price
-		// 执行单个插入
-		o.Insert(&orderGoods)
+		// 购物车中对应的商品删除
+		conn.Do("hdel", "cart_"+strconv.Itoa(user.Id), goods.Id)
 	}
 	// 操作成功，返回成功信息
 	resp["code"] = 200
