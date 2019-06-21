@@ -17,7 +17,7 @@
 		<div class="goods_detail_pic fl"><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"  style="width: 350px"></div>
 
 		<div class="goods_detail_list fr">
-			<form action="/user/showOrder" method="POST">
+			<form action="/user/showOrder" method="POST" onsubmit="return checkCount()">
 				<h3>{{.goodssku.Name}}</h3>
 				<p>{{.goodssku.Desc}}</p>
 				<div class="prize_bar">
@@ -27,7 +27,7 @@
 				<div class="goods_num clearfix">
 					<div class="num_name fl">数 量：</div>
 					<div class="num_add fl">
-						<input type="text" name="goodsCount" class="num_show fl" value="1">
+						<input type="text" name="goodsCount" class="num_show fl" value="1" stock={{.goodssku.Stock}}>
 						
 						<a href="javascript:;" class="add fr">+</a>
 						<a href="javascript:;" class="minus fr">-</a>	
@@ -43,14 +43,7 @@
 					<a href="javascript:;" class="add_cart" id="add_cart" skuid="{{.goodssku.Id}}">加入购物车</a>				
 				</div>
 			</form>
-		
-		
-		
-		
-		
-		
-		
-		
+			
 		</div>
 	</div>
 
@@ -89,6 +82,20 @@
 {{define "js"}}
 	<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
 	<script type="text/javascript">
+	// 直接购买使用form表单提交到订单处理页，需要先校验数据
+	function checkCount(){
+		count=$('input[name="goodsCount"]').val()
+		// alert(count)
+		stock=$('input[name="goodsCount"]').attr('stock')
+		if(count>stock){
+			msg="购买数量超出商品库存："+stock
+			alert(msg)
+			$('input[name="goodsCount"]').val(stock)
+			return false
+		}
+		
+	}
+	// 加购后购买，先以异步post请求提交到购物车页面，无需校验数据
 	UpdateGoodsPrice()
 	function UpdateGoodsPrice(){
 		//获取单价和数量
