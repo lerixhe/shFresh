@@ -336,20 +336,21 @@ func (this *UserController) HandleUserSite() {
 	o := orm.NewOrm()
 	var address models.Address
 	address.Isdefault = true
+	userName := this.GetSession("userName").(string)
+	user := models.User{Name: userName}
+	o.Read(&user, "Name")
 	//先查询该用户的默认地址，没有默认地址[直接插入并设为默认]，有默认地址则先取消默认[再插入并设为默认]
-	err = o.Read(&address, "Isdefault")
+	// err = o.Read(&address, "Isdefault")
+	err = o.QueryTable("Address").RelatedSel("User").Filter("User__Id", user.Id).Filter("Isdefault", true).One(&address)
 	if err != nil {
 		log.Println("数据库未读取到默认地址：", err)
 	} else {
-		log.Println("数据库读取到默认地址：", address)
+		log.Println("数据库读取到默认地址,取消其默认状态：", address)
 		address.Isdefault = false
 		o.Update(&address)
 	}
 	//写入数据库,存在外键，一定要初始化外键值，否则插入不成功
 	//再次读数据库，取得完整user作为外键
-	userName := this.GetSession("userName").(string)
-	user := models.User{Name: userName}
-	o.Read(&user, "Name")
 	//创建新地址
 	address = models.Address{
 		Receiver:  receiver,
