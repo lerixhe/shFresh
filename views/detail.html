@@ -87,7 +87,7 @@
 		count=$('input[name="goodsCount"]').val()
 		// alert(count)
 		stock=$('input[name="goodsCount"]').attr('stock')
-		if(count>stock){
+		if(parseInt(count)>parseInt(stock)){
 			msg="购买数量超出商品库存："+stock
 			alert(msg)
 			$('input[name="goodsCount"]').val(stock)
