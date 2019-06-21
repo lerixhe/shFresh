@@ -132,7 +132,7 @@ type OrderGoods struct {
 
 func init() {
 	// set default database
-	orm.RegisterDataBase("default", "mysql", "mysql:123456@tcp(94.191.18.219:3306)/dailyfresh?charset=utf8")
+	orm.RegisterDataBase("default", "mysql", "mysql:123456@tcp(94.191.18.219:3306)/dailyfresh?charset=utf8&loc=Local")
 
 	// register model
 	orm.RegisterModel(new(User), new(Address), new(OrderGoods), new(OrderInfo), new(IndexPromotionBanner), new(IndexTypeGoodsBanner), new(IndexGoodsBanner), new(GoodsImage), new(GoodsSKU), new(GoodsType), new(Goods))

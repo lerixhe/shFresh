@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"github.com/gomodule/redigo/redis"
 	"log"
+	"math"
 	"regexp"
 	"shFresh/models"
 	"shFresh/redispool"
@@ -237,12 +238,42 @@ func (this *UserController) ShowUserOrder() {
 	userName := GetUser(&this.Controller)
 	this.Data["orderActive"] = "active"
 	this.TplName = "user_center_order.html"
-	// 获取用户的订单，订单商品
 	o := orm.NewOrm()
+	// 获取用户的订单，订单商品
+
 	user := models.User{Name: userName}
 	o.Read(&user, "Name")
 	orderInfos := []models.OrderInfo{}
-	o.QueryTable("OrderInfo").Filter("User__Id", user.Id).All(&orderInfos)
+	// 分页处理
+	pageSize := 2
+	InfoCount, _ := o.QueryTable("OrderInfo").Filter("User__Id", user.Id).Count()
+	pageCount := int(math.Ceil(float64(InfoCount) / float64(pageSize)))
+	pageIndex, err := this.GetInt("pageIndex")
+	if err != nil {
+		log.Println("未获取到页码，默认第一页")
+		pageIndex = 1
+	}
+	if pageIndex > pageCount {
+		pageIndex = pageCount
+	}
+	start := (pageIndex - 1) * pageSize
+	// 开始查询
+	o.QueryTable("OrderInfo").Filter("User__Id", user.Id).OrderBy("-Time").Limit(pageSize, start).All(&orderInfos)
+
+	//分页按钮处理
+	prePage := pageIndex - 1
+	if prePage <= 1 {
+		prePage = 1
+	}
+	nextPage := pageIndex + 1
+	if nextPage > pageCount {
+		nextPage = pageCount
+	}
+	pages := PageTool(pageCount, pageIndex)
+	this.Data["pages"] = pages
+	this.Data["pageIndex"] = pageIndex
+	this.Data["prePage"] = prePage
+	this.Data["nextPage"] = nextPage
 
 	// 定义一个切片容器，可存多种类型数据
 	container := make([]map[string]interface{}, len(orderInfos))
@@ -256,6 +287,7 @@ func (this *UserController) ShowUserOrder() {
 		container[index] = temp
 	}
 	this.Data["container"] = container
+
 }
 
 //显示用户中心：用户收货地址

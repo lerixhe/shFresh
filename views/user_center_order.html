@@ -5,7 +5,7 @@
 		<h3 class="common_title2">全部订单</h3>
 		{{range .container}}
 			<ul class="order_list_th w978 clearfix">
-				<li class="col01">{{.orderInfo.Time}}</li>
+				<li class="col01">{{.orderInfo.Time.Format "2006-01-02 15:04:05"}}</li>
 				<li class="col02">订单号：{{.orderInfo.OrderId}}</li>
 				<li class="col02 stress">{{if compare .orderInfo.Orderstatus 1}}未支付{{else}}已支付{{end}}</li>		
 			</ul>
@@ -16,8 +16,8 @@
 							<td width="55%">
 									{{range .orderGoods}}
 								<ul class="order_goods_list clearfix">					
-									<li class="col01"><img src="http://94.191.18.219:8888/{{.GoodsSKU.Image}}"></li>
-									<li class="col02">{{.GoodsSKU.Name}}<em>{{.GoodsSKU.Price}}元/{{.GoodsSKU.Unite}}</em></li>	
+									<li class="col01" ><a href="/goodsDetail?id={{.GoodsSKU.Id}}" ><img src="http://94.191.18.219:8888/{{.GoodsSKU.Image}}"></a></li>
+									<li class="col02"><a href="/goodsDetail?id={{.GoodsSKU.Id}}" >{{.GoodsSKU.Name}}</a><em>{{.GoodsSKU.Price}}元/{{.GoodsSKU.Unite}}</em></li>	
 									<li class="col03">{{.Count}}</li>
 									<li class="col04">{{.GoodsSKU.Price}}元</li>	
 								</ul>
@@ -33,13 +33,19 @@
 		{{end}}
 
 		<div class="pagenation">
-			<a href="#"><上一页</a>
-			<a href="#" class="active">1</a>
-			<a href="#">2</a>
-			<a href="#">3</a>
-			<a href="#">4</a>
-			<a href="#">5</a>
-			<a href="#">下一页></a>
+			{{if eq .prePage .pageIndex }}
+				<a href ="javascript:return false;" style="opacity: 0.2">上一页</a>
+			{{else}}
+				<a href="/user/userCenterOrder?pageIndex={{.prePage}}">上一页</a>
+			{{end}}
+			{{range $index,$value:= .pages}}
+				<a href="/user/userCenterOrder?pageIndex={{$value}}" {{if compare $value $.pageIndex }}class="active"{{else}}{{end}}>{{$value}}</a>
+			{{end}}
+			{{if eq .nextPage .pageIndex }}
+				<a href ="javascript:return false;" style="opacity: 0.2">下一页</a>
+			{{else}}
+				<a href="/user/userCenterOrder?pageIndex={{.nextPage}}">下一页</a>
+			{{end}}
 		</div>
 </div>
 {{end}}

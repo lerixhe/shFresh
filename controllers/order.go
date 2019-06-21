@@ -48,12 +48,25 @@ func (this *OrderController) ShowOrder() {
 		goodsSKU := models.GoodsSKU{Id: skuid}
 		o.Read(&goodsSKU)
 		temp["goodssku"] = goodsSKU
-		count, err := redis.Int(conn.Do("hget", "cart_"+strconv.Itoa(user.Id), skuid))
-		if err != nil {
-			log.Println("商品数量错误", err)
-			this.Redirect("/user/cart", 302)
-			return
+		var count = 0
+		source, _ := this.GetInt("source")
+		log.Println("本次订单显示的请求来源(1商品详情  0购物车)：", source)
+		// 判断请求来源
+		if source == 1 {
+			count, err = this.GetInt("goodsCount")
+			if err != nil {
+				log.Println("商品数量错误", err)
+				return
+			}
+		} else {
+			count, err = redis.Int(conn.Do("hget", "cart_"+strconv.Itoa(user.Id), skuid))
+			if err != nil {
+				log.Println("商品数量错误", err)
+				this.Redirect("/user/cart", 302)
+				return
+			}
 		}
+
 		temp["count"] = count
 		totalCount += count
 		// 商品序号

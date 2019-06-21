@@ -61,7 +61,7 @@
 		{{range .goods}}
 			<ul class="cart_list_td clearfix">
 				<li class="col01"><input type="checkbox" name="skuid" checked="" value="{{.goodssku.Id}}"></li>
-				<li class="col02"><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"></li>
+				<li class="col02"><a href="/goodsDetail?id={{.goodssku.Id}}" ><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"></a></li>
 				<li class="col03">{{.goodssku.Name}}<br><em>{{.goodssku.Price}}元/{{.goodssku.Unite}}</em></li>
 				<li class="col04">{{.goodssku.Unite}}</li>
 				<li class="col05">{{.goodssku.Price}}元</li>
@@ -82,6 +82,7 @@
 			<li class="col01"><input type="checkbox" name="" checked=""></li>
 			<li class="col02">全选</li>
 			<li class="col03">合计(不含运费)：<span>¥</span><em>{{.totalPrice}}</em><br>共计<b>{{.totalCount}}</b>件商品</li>
+			<input  type="hidden" name="source"  value=0 >
 			<li class="col04"><input type="submit" value="去结算" style="display:block;height:78px;width:169px;background-color:#ff3d3d;text-align:center;line-height:78px;color:#fff;font-size:24px;border:0;"></li>
 		</ul>
 	</form>

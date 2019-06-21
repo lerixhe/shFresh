@@ -17,27 +17,40 @@
 		<div class="goods_detail_pic fl"><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"  style="width: 350px"></div>
 
 		<div class="goods_detail_list fr">
-			<h3>{{.goodssku.Name}}</h3>
-			<p>{{.goodssku.Desc}}</p>
-			<div class="prize_bar">
-				<span class="show_pirze">¥<em>{{.goodssku.Price}}</em></span>
-				<span class="show_unit">单  位：{{.goodssku.Unite}}</span>
-			</div>
-			<div class="goods_num clearfix">
-				<div class="num_name fl">数 量：</div>
-				<div class="num_add fl">
-					<input type="text" class="num_show fl" value="1">
-					
-					<a href="javascript:;" class="add fr">+</a>
-					<a href="javascript:;" class="minus fr">-</a>	
-				</div> 
-			</div>
-			<div class="total">总价：<em>元</em></div>
-			<div class="operate_btn">
-				<a href="javascript:;" class="buy_btn">立即购买</a>
-				<!-- 给购物车添加自定义属性skuid，以传递值给js处理 -->
-				<a href="javascript:;" class="add_cart" id="add_cart" skuid="{{.goodssku.Id}}">加入购物车</a>				
-			</div>
+			<form action="/user/showOrder" method="POST">
+				<h3>{{.goodssku.Name}}</h3>
+				<p>{{.goodssku.Desc}}</p>
+				<div class="prize_bar">
+					<span class="show_pirze">¥<em>{{.goodssku.Price}}</em></span>
+					<span class="show_unit">单  位：{{.goodssku.Unite}}</span>
+				</div>
+				<div class="goods_num clearfix">
+					<div class="num_name fl">数 量：</div>
+					<div class="num_add fl">
+						<input type="text" name="goodsCount" class="num_show fl" value="1">
+						
+						<a href="javascript:;" class="add fr">+</a>
+						<a href="javascript:;" class="minus fr">-</a>	
+					</div> 
+				</div>
+				<div class="total">总价：<em>元</em></div>
+				<div class="operate_btn">
+					<input  type="hidden" name="source"  value=1 >
+					<input  type="hidden" name="skuid"  value="{{.goodssku.Id}}" >
+						<input type="submit"   class="buy_btn" name="" value="立即购买">
+						<!-- <a href="javascript:;" class="buy_btn">立即购买</a> -->
+					<!-- 给购物车添加自定义属性skuid，以传递值给js处理 -->
+					<a href="javascript:;" class="add_cart" id="add_cart" skuid="{{.goodssku.Id}}">加入购物车</a>				
+				</div>
+			</form>
+		
+		
+		
+		
+		
+		
+		
+		
 		</div>
 	</div>
 
@@ -161,5 +174,15 @@
 
 			
 		})
+		
+		// $('.buy_btn').click(function(){
+		// 	param={}
+		// 	$.post('/user/showOrder',param,function(data){
+		// 		if(data==undefined){
+
+		// 		}
+		// 	})
+		// })
+		
 		</script>
 	{{end}}
