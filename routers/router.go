@@ -46,6 +46,10 @@ func init() {
 	beego.Router("/user/showOrder", &controllers.OrderController{}, "post:ShowOrder")
 	// 创建订单
 	beego.Router("/user/addOrder", &controllers.OrderController{}, "post:AddOrder")
+	// 接受处理支付的url
+	beego.Router("/user/pay", &controllers.OrderController{}, "get:HandlePay")
+	// 支付成功
+	beego.Router("user/payok", &controllers.OrderController{}, "get:PayOK")
 }
 
 //全局变量

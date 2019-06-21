@@ -25,7 +25,11 @@
 							</td>
 							<td width="15%">{{.orderInfo.TotalPrice }}元</td>
 							<td width="15%">{{if compare .orderInfo.Orderstatus 1}}未支付{{else}}已支付{{end}}</td>
-							<td width="15%"><a href="#" class="oper_btn">{{if compare .orderInfo.Orderstatus 1}}去付款{{else}}已支付{{end}}</a></td>
+							{{if compare .orderInfo.Orderstatus 1}}
+								<td width="15%"><a href="/user/pay?orderId={{.orderInfo.OrderId}}&amount={{.orderInfo.TotalPrice}}" class="oper_btn" style="color:rgb(16, 158, 16);border:1px solid rgb(16, 158, 16)">去付款</a></td>
+								{{else}}
+								<td width="15%"><a class="oper_btn" style="color: darkgrey">已支付</a></td>
+								{{end}}
 						</tr>
 					</tbody>
 				</table>

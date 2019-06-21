@@ -68,7 +68,7 @@
 				<li class="col06">
 					<div class="num_add">
 						<a href="javascript:;" class="add fl">+</a>
-						<input type="text" class="num_show fl" skuid="{{.goodssku.Id}}" value={{.count}}>	
+						<input type="text" class="num_show fl" skuid="{{.goodssku.Id}}" value={{.count}} stock={{.goodssku.Stock}}>	
 						<a href="javascript:;" class="minus fl">-</a>	
 					</div>
 				</li>
@@ -151,6 +151,15 @@
 	$('.add').click(function(){
 		count=$(this).next().val()
 		count=parseInt(count)+1
+		stock=parseInt($(this).next().attr("stock"))
+		// 若超过了库存
+		if(count>stock){
+			msg="超过当前商品最大库存："+stock
+			alert(msg)
+			$(this).next().val(stock)
+			return
+		}
+		// 没有超过库存，则更新到redis
 		skuid=parseInt($(this).next().attr('skuid'))
 		param={"skuid":skuid,"count":count}
 		// ajxs是异步执行的，若有用变量保存状态再判断执行的需求（有先后顺序），需要解除异步。
@@ -229,6 +238,15 @@
 			alert("数据不合法，请重新输入")
 			$(this).val(preCount)
 			// alert(preCount)
+			return
+		}
+		// 输入值超过最大库存，则还原为初始值
+		stock=$(this).attr('stock')
+		if(parseInt(count)>parseInt(stock)){
+			msg="超过当前商品最大库存："+stock
+			alert(msg)
+			$(this).val(preCount)
+			count=preCount
 			return
 		}
 		skuid=parseInt($(this).attr('skuid'))

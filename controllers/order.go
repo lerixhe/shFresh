@@ -4,6 +4,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 	"github.com/gomodule/redigo/redis"
+	"github.com/smartwalle/alipay"
 	"log"
 	"shFresh/models"
 	"shFresh/redispool"
@@ -267,4 +268,83 @@ func (this *OrderController) AddOrder() {
 	log.Println("订单创建成功！")
 	this.Data["json"] = resp
 	return
+}
+
+// 处理支付
+func (this *OrderController) HandlePay() {
+	var aliPublicKey = "" // 可选，支付宝提供给我们用于签名验证的公钥，通过支付宝管理后台获取
+	var privateKey = `MIIEpgIBAAKCAQEA4JBmaOfYlR8l3CsyfwwlWRtA92k0sQczLNtMkXO24Iwos+Hb
+	yPn8BH2ho2iWHJp+Tqw5l5l9au4J8NW+4DiOzWBmcFJkEpk3jOOfZNxpIj4vWbQw
+	d2UKgYm1lc53kQtvUhCubZJHJlRS2lFfsSYB2QdL37ENy/enWMchsWHjUeEZjWco
+	lpxRbaVnskKI+plGJ+v7dip6kjRRwRBZIPBa0cZOPW5vY9EzaYTaBsJNHgd9dFi4
+	1DNvURRmhvPcGpD/Zns/PCJAwpPxPALs9fpc686VnAqEFIsaVnIFqHeUKXa6jWux
+	fAjxFHpnWd/lkd9t3YDjt3Bi3uC89iEGqcVIZwIDAQABAoIBAQCMm320E+81t/IR
+	wG52xFkiSQFNqO8YJUTywkFYFZcdVEUsFLB0T6pv+WXbFmJfeJC7m/TXqoCwEmnh
+	BUTlyiQIDmM10zDbwFna+q9UDPo7OaqWRU/PglGouFwdd9C/3eQPA2jkLKImKshR
+	8H+1QPIJPRtR7d+Qpfl/iffbxEn8eoQA8sJWp710Kl3SB5gStqrw0YYo8zIVsjLe
+	BlsYfffLUztJCI38QTfjt7EGGh7kVO7cYhc9nTA6Eirf75vv6JuyzRTjqfZ3ktvq
+	uXm/LXI1Pfa0qIZljYqtg97+E76d+rmHk6QcEN29q+D/gbkixdq2X+NHbCaWeGBA
+	dqgesqWpAoGBAPglWjpN+T8B6E8AktxljvJtOtX8VoP/bzugjFMzrPMEfJ38n7wB
+	SRoz37tUIqu6Cs7OOohHe+SidwKbdrL9dz4ig0D0IaaXvX7moiqOuqAlfPNnfgXs
+	88txxANV2U4wvvKSlm1Rm+O3xnqOPbmW36K6uzVYL5zYlMXLGShsNjHTAoGBAOer
+	+Kwe/N6NzWqqoLg6ShTMNpb1eW9aU+Pi6ItqIl7UOZhrjh5tddmIZWaUdYnuQov9
+	24n+dlZNJz6WbELWnR+D7ylRCWduj8d5Va0+hbgnYkJ+0U9olCTOt20YpqqG0wWY
+	qwITeXMPXy6lv5ORpf4NvPsBPCgsGLRw9zuBRh6dAoGBAMZFqjN+DBJxJrrBPZdG
+	upIv/tvuFP7BQZKGNLliR+WhhyUBLmydJlj+a90VW+KU83/Mvm4XmAHWYns91vkr
+	l3SZRQDIUH75LZtREvAoPSwq6Azge4ymiSHck/8KQGi+gEP4JqPQmlu4gql4MA+z
+	Ypt20pDMFrcfQrhMEJ0A4cirAoGBAN0BuaC5jxHgxO3VCK23LaTZi9pHIymPSihD
+	9wPIpDFC1A8Ly/BLC/oRnGpXhimnGeTir+Tc05dQ0vdqGK1Kf2npOuZ3YDlDx/XL
+	UmiLFJWxPJOi15qhcXILogB5W8WiCP11vu2kFmAlce/WPwRQFcJe6MGrU/Ae4RKC
+	Edi6YmIhAoGBALq8m+hFd0OcWbMbLLTn+6WZrNeMJM7UJlQ4ngOMq15TfwLvyaB8
+	2gmayigvU+uOk1xlBOmtLivOCzlbt+heF4LId6jZyzlhZIQ/3xq4BrspocTyUwCX
+	osEP+3wD4r5c0EolOVpmegh5LxXHSVLvu2Jid3gwg0YlXvunhC49hhQy
+	` // 必须，上一步中使用 RSA签名验签工具 生成的私钥
+	var appId = "2016101100656969"
+	var client, err = alipay.New(appId, aliPublicKey, privateKey, false)
+
+	// 将 key 的验证调整到初始化阶段
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	orderId := this.GetString("orderId")
+	amount := this.GetString("amount")
+
+	var p = alipay.TradePagePay{}
+	p.NotifyURL = "http://xxx"
+	p.ReturnURL = "http://192.168.123.174:8080/user/payok"
+	p.Subject = "天天生鲜购物平台"
+	p.OutTradeNo = orderId
+	p.TotalAmount = amount
+	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
+
+	url, err := client.TradePagePay(p)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var payURL = url.String()
+	log.Println(payURL)
+	// 这个 payURL 即是用于支付的 URL，可将输出的内容复制，到浏览器中访问该 URL 即可打开支付页面。
+	this.Redirect(payURL, 302)
+}
+
+// 支付成功的状态处理（显示支付结果）
+func (this *OrderController) PayOK() {
+	this.TplName = "user_center_order.html"
+	orderId := this.GetString("out_trade_no")
+	if orderId == "" {
+		log.Println("支付返回数据错误")
+		this.Redirect("/user/userCenterOrder", 302)
+		return
+	}
+	o := orm.NewOrm()
+	_, err := o.QueryTable("OrderInfo").Filter("OrderId", orderId).Update(orm.Params{"Orderstatus": 0})
+	if err != nil {
+		log.Println("更新订单数据失败")
+		this.Redirect("/user/userCenterOrder", 302)
+		return
+	}
+	this.Redirect("/user/userCenterOrder", 302)
 }
