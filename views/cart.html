@@ -240,14 +240,13 @@
 			// alert(preCount)
 			return
 		}
-		// 输入值超过最大库存，则还原为初始值
+		// 输入值超过最大库存，设置为库存,注意不需要return
 		stock=$(this).attr('stock')
 		if(parseInt(count)>parseInt(stock)){
 			msg="超过当前商品最大库存："+stock
 			alert(msg)
-			$(this).val(preCount)
-			count=preCount
-			return
+			$(this).val(stock)
+			count=stock
 		}
 		skuid=parseInt($(this).attr('skuid'))
 		count=parseInt(count)

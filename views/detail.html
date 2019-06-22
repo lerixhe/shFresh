@@ -33,7 +33,12 @@
 						<a href="javascript:;" class="minus fr">-</a>	
 					</div> 
 				</div>
+				<div>
+					
+				</div>
+				<div class="show_unit">库  存：{{.goodssku.Stock}}</div>
 				<div class="total">总价：<em>元</em></div>
+				
 				<div class="operate_btn">
 					<input  type="hidden" name="source"  value=1 >
 					<input  type="hidden" name="skuid"  value="{{.goodssku.Id}}" >
@@ -107,15 +112,25 @@
 		//把总价更新
 		$('.total').children('em').text(total.toFixed(2)+'元')
 	}
+	// 增加商品数量
 	$('.add').click(function(){
 		// 获取数量
 		count=$('.num_show').val()
 		count=parseInt(count)+1
+		// 判断库存,超出则设置为库存
+		stock=$('input[name="goodsCount"]').attr('stock')
+		stock=parseInt(stock)
+		if(count>stock){
+			msg="超出最大库存："+stock
+			alert(msg)
+			count=stock
+		}
 		// 展示数量
 		$('.num_show').val(count)
 		// 更新总价
 		UpdateGoodsPrice()
 	})
+	// 减少商品数量
 	$('.minus').click(function(){
 		// 获取数量
 		count=$('.num_show').val()
@@ -137,7 +152,16 @@
 		if(isNaN(count) || count.trim().length==0 || parseInt(count) < 1){
 			count = 1
 		}
-		$(this).val(parseInt(count))
+		// 判断库存,超出则设置为库存
+		stock=$('input[name="goodsCount"]').attr('stock')
+		stock=parseInt(stock)
+		count=parseInt(count)
+		if(count>stock){
+			msg="超出最大库存："+stock
+			alert(msg)
+			count=stock
+		}
+		$(this).val(count)
 		UpdateGoodsPrice()
 	})
 
@@ -145,7 +169,7 @@
 		var $add_y = $('#add_cart').offset().left;
 		var $to_x = $('#show_count').offset().top;
 		var $to_y = $('#show_count').offset().left;
-
+// 加入购物车
 		$('#add_cart').click(function(){
 			// ajaks
 			// 获取购物车的href属性
