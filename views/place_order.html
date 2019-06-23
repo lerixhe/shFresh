@@ -112,7 +112,7 @@
 	</div>
 
 	<div class="order_submit clearfix">
-		<a href="javascript:;" id="order_btn" skuids={{.skuids}}>提交订单</a>
+		<a href="javascript:;" id="order_btn" skuids={{.skuids}} source={{.source}}>提交订单</a>
 	</div>	
 
 	<div class="footer">
@@ -144,6 +144,7 @@
 			payId=$('input[name="pay_style"]:checked').val()
 			// 获取所有商品id没必要一个一个拿，因为进本视图时已经接收到了，故直接从视图获取
 			skuids=$('#order_btn').attr('skuids')
+			source=parseInt($('#order_btn').attr('source'))
 			// alert(addrId)
 			// alert(payId)
 			// alert(skuids)
@@ -156,6 +157,7 @@
 				"addrId":addrId,
 				"payId":payId,
 				"skuids":skuids,
+				"source":source,
 				"totalCount":totalCount,
 				"totalPrice":totalPrice,
 				"discount":discount,

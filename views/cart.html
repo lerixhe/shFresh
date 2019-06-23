@@ -57,18 +57,18 @@
 		<li class="col05">小计</li>
 		<li class="col06">操作</li>
 	</ul>
-	<form action="/user/showOrder" method="POST">
+	<form action="/user/showOrder" method="POST" onsubmit="return checkCount()">
 		{{range .goods}}
 			<ul class="cart_list_td clearfix">
 				<li class="col01"><input type="checkbox" name="skuid" checked="" value="{{.goodssku.Id}}"></li>
 				<li class="col02"><a href="/goodsDetail?id={{.goodssku.Id}}" ><img src="http://94.191.18.219:8888/{{.goodssku.Image}}"></a></li>
-				<li class="col03">{{.goodssku.Name}}<br><em>{{.goodssku.Price}}元/{{.goodssku.Unite}}</em></li>
+				<li class="col03" id="goodsName">{{.goodssku.Name}}<br><em>{{.goodssku.Price}}元/{{.goodssku.Unite}}</em></li>
 				<li class="col04">{{.goodssku.Unite}}</li>
 				<li class="col05">{{.goodssku.Price}}元</li>
 				<li class="col06">
 					<div class="num_add">
 						<a href="javascript:;" class="add fl">+</a>
-						<input type="text" class="num_show fl" skuid="{{.goodssku.Id}}" value={{.count}} stock={{.goodssku.Stock}}>	
+						<input type="text"  name="goodsCount" class="num_show fl" skuid="{{.goodssku.Id}}" value={{.count}} stock={{.goodssku.Stock}}>	
 						<a href="javascript:;" class="minus fl">-</a>	
 					</div>
 				</li>
@@ -106,6 +106,29 @@
 <!-- 单独写script标签引入jquery？ -->
 <script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
 <script type="text/javascript">
+// 提交购物车商品之前，先校验库存
+	function checkCount(){
+		// 遍历每一个iinput
+		res=true
+		$('input[name="goodsCount"]').each(function(){
+			count=$(this).val()
+			stock=$(this).attr('stock')
+			goodsName=$('#goodsName').text()
+			// alert(count)
+			if (parseInt(stock)<1){
+				
+				msg=goodsName+"库存不足，请等待商品补充库存"
+				alert(msg)
+				res= false
+			}else if(parseInt(count)>parseInt(stock)){
+				msg=goodsName+"购买数量超出商品库存："+stock
+				alert(msg)
+				$('input[name="goodsCount"]').val(stock)
+			res= false
+			}
+		})
+		return res
+	}
 // 根据用户购物车变动总价和总件数
 	function UpdateGoodsPrice(){
 		totalCount=0

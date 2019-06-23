@@ -52,14 +52,17 @@ func (this *OrderController) ShowOrder() {
 		var count = 0
 		source, _ := this.GetInt("source")
 		log.Println("本次订单显示的请求来源(1商品详情  0购物车)：", source)
-		// 判断请求来源
+		// 判断请求来源,若直接来自商品详情，则使用商品详情的购买数量数量，购物车不动
 		if source == 1 {
+			this.Data["source"] = 1
 			count, err = this.GetInt("goodsCount")
 			if err != nil {
 				log.Println("商品数量错误", err)
 				return
 			}
+			// 否则使用购物车的数量，并清空购物车对于商品
 		} else {
+			this.Data["source"] = 0
 			count, err = redis.Int(conn.Do("hget", "cart_"+strconv.Itoa(user.Id), skuid))
 			if err != nil {
 				log.Println("商品数量错误", err)
@@ -110,6 +113,7 @@ func (this *OrderController) AddOrder() {
 	ids := skuidString[1 : len(skuidString)-1]
 	skuids := strings.Fields(ids)
 	log.Println("用户提交订单中的商品iD", skuids)
+	source, _ := this.GetInt("source")
 	totalCount, _ := this.GetInt("totalCount")
 	totalPrice, _ := this.GetInt("totalPrice")
 	discount, _ := this.GetInt("discount")
@@ -258,7 +262,11 @@ func (this *OrderController) AddOrder() {
 		}
 		// 尝试成功了
 		// 购物车中对应的商品删除
-		conn.Do("hdel", "cart_"+strconv.Itoa(user.Id), goods.Id)
+		// 需判断来源，若订单来自于直接购买，则无需删除购物车
+		// (1商品详情  0购物车)
+		if source == 0 {
+			conn.Do("hdel", "cart_"+strconv.Itoa(user.Id), goods.Id)
+		}
 	}
 
 	// 操作成功，返回成功信息

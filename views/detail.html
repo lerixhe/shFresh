@@ -34,7 +34,7 @@
 					</div> 
 				</div>
 				<div>
-					
+
 				</div>
 				<div class="show_unit">库  存：{{.goodssku.Stock}}</div>
 				<div class="total">总价：<em>元</em></div>
@@ -92,7 +92,10 @@
 		count=$('input[name="goodsCount"]').val()
 		// alert(count)
 		stock=$('input[name="goodsCount"]').attr('stock')
-		if(parseInt(count)>parseInt(stock)){
+		if (parseInt(stock)<1){
+			alert("库存不足，请等待商品补充库存")
+			return false
+		}else if(parseInt(count)>parseInt(stock)){
 			msg="购买数量超出商品库存："+stock
 			alert(msg)
 			$('input[name="goodsCount"]').val(stock)
@@ -120,7 +123,10 @@
 		// 判断库存,超出则设置为库存
 		stock=$('input[name="goodsCount"]').attr('stock')
 		stock=parseInt(stock)
-		if(count>stock){
+		if (parseInt(stock)<1){
+			alert("库存不足，请等待商品补充库存")
+			return
+		}else if(count>stock){
 			msg="超出最大库存："+stock
 			alert(msg)
 			count=stock
@@ -171,6 +177,12 @@
 		var $to_y = $('#show_count').offset().left;
 // 加入购物车
 		$('#add_cart').click(function(){
+				// 判断库存是否为0
+			stock=$('input[name="goodsCount"]').attr('stock')
+			if (parseInt(stock)<1){
+				alert("库存不足，请等待商品补充库存")
+				return
+			}
 			// ajaks
 			// 获取购物车的href属性
 			// $('#add_cart').prop('href') 
