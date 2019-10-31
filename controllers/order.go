@@ -1,16 +1,17 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/orm"
-	"github.com/gomodule/redigo/redis"
-	"github.com/smartwalle/alipay"
 	"log"
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
+	"github.com/gomodule/redigo/redis"
+	"github.com/smartwalle/alipay"
 )
 
 type OrderController struct {
@@ -308,18 +309,18 @@ func (this *OrderController) HandlePay() {
 	osEP+3wD4r5c0EolOVpmegh5LxXHSVLvu2Jid3gwg0YlXvunhC49hhQy
 	` // 必须，上一步中使用 RSA签名验签工具 生成的私钥
 	var appId = "2016101100656969"
-	var client, err = alipay.New(appId, aliPublicKey, privateKey, false)
+	var client = alipay.New(appId, aliPublicKey, privateKey, false)
 
 	// 将 key 的验证调整到初始化阶段
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
 
 	orderId := this.GetString("orderId")
 	amount := this.GetString("amount")
 
-	var p = alipay.TradePagePay{}
+	var p = alipay.AliPayTradePagePay{}
 	p.NotifyURL = "http://xxx"
 	p.ReturnURL = "http://192.168.123.174:8080/user/payok"
 	p.Subject = "天天生鲜购物平台"

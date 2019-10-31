@@ -2,13 +2,14 @@ package controllers
 
 import (
 	"encoding/base64"
-	"github.com/gomodule/redigo/redis"
 	"log"
 	"math"
 	"regexp"
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
+
+	"github.com/gomodule/redigo/redis"
 
 	"github.com/astaxie/beego/utils"
 
