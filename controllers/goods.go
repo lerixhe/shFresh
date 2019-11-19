@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/orm"
 	"log"
 	"math"
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
+
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
 )
 
 type GoodsController struct {

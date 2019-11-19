@@ -8,4 +8,6 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644 // indirect
 	github.com/smartwalle/alipay v1.0.2
+	github.com/smartystreets/goconvey v1.6.4
+	google.golang.org/appengine v1.6.5 // indirect
 )

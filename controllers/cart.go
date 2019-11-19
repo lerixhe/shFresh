@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/orm"
-	"github.com/gomodule/redigo/redis"
 	"log"
 	"shFresh/models"
 	"shFresh/redispool"
 	"strconv"
+
+	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
+	"github.com/gomodule/redigo/redis"
 )
 
 type CartController struct {
